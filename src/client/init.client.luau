@@ -1,13 +1,18 @@
 --!strict
--- Inicializador do Cliente e Interface do Seletor de Gráficos
+-- Cliente: Interface do Seletor de Gráficos e Notificação de Pesca
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local GraphicsController = require(script.Parent:WaitForChild("GraphicsController"))
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local sharedFolder = ReplicatedStorage:WaitForChild("Shared")
 
--- Função para criar a interface moderna na tela
+local fishCaughtEvent = sharedFolder:WaitForChild("FishCaughtEvent") :: RemoteEvent
+local startFishingEvent = sharedFolder:WaitForChild("StartFishingEvent") :: RemoteEvent
+
+-- 1. Interface de Qualidade Gráfica
 local function createGraphicsSelectorUI()
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "GraphicsSelectorGui"
@@ -15,7 +20,6 @@ local function createGraphicsSelectorUI()
     screenGui.DisplayOrder = 100
     screenGui.IgnoreGuiInset = true
 
-    -- Fundo escurecido suave
     local backdrop = Instance.new("Frame")
     backdrop.Name = "Backdrop"
     backdrop.Size = UDim2.fromScale(1, 1)
@@ -23,7 +27,6 @@ local function createGraphicsSelectorUI()
     backdrop.BackgroundTransparency = 0.35
     backdrop.Parent = screenGui
 
-    -- Card Central
     local mainCard = Instance.new("Frame")
     mainCard.Name = "MainCard"
     mainCard.Size = UDim2.fromOffset(450, 320)
@@ -38,38 +41,31 @@ local function createGraphicsSelectorUI()
     cardCorner.Parent = mainCard
 
     local cardStroke = Instance.new("UIStroke")
-    cardStroke.Color = Color3.fromRGB(60, 65, 90)
+    cardStroke.Color = Color3.fromRGB(0, 180, 255)
     cardStroke.Thickness = 2
     cardStroke.Parent = mainCard
 
-    -- Título
     local title = Instance.new("TextLabel")
-    title.Name = "Title"
     title.Size = UDim2.new(1, 0, 0, 50)
     title.Position = UDim2.fromOffset(0, 15)
     title.BackgroundTransparency = 1
-    title.Text = "🎮 ESCOLHA SUA QUALIDADE"
+    title.Text = "🎣 ESCOLHA SEUS GRÁFICOS"
     title.TextColor3 = Color3.fromRGB(255, 255, 255)
     title.Font = Enum.Font.GothamBold
     title.TextSize = 22
     title.Parent = mainCard
 
-    -- Subtítulo
     local subtitle = Instance.new("TextLabel")
-    subtitle.Name = "Subtitle"
     subtitle.Size = UDim2.new(1, -40, 0, 30)
     subtitle.Position = UDim2.fromOffset(20, 60)
     subtitle.BackgroundTransparency = 1
-    subtitle.Text = "Ajuste o visual para o melhor desempenho no seu dispositivo"
+    subtitle.Text = "Ajuste o visual para o melhor desempenho durante a pescaria"
     subtitle.TextColor3 = Color3.fromRGB(180, 185, 205)
     subtitle.Font = Enum.Font.Gotham
     subtitle.TextSize = 13
-    subtitle.TextWrapped = true
     subtitle.Parent = mainCard
 
-    -- Container dos Botões
     local buttonsFrame = Instance.new("Frame")
-    buttonsFrame.Name = "ButtonsFrame"
     buttonsFrame.Size = UDim2.new(1, -40, 0, 180)
     buttonsFrame.Position = UDim2.fromOffset(20, 110)
     buttonsFrame.BackgroundTransparency = 1
@@ -81,23 +77,15 @@ local function createGraphicsSelectorUI()
     uiList.Parent = buttonsFrame
 
     local options = {
-        { Name = "Low", Label = "🟢 BAIXO (Batata / Mobile - FPS Máximo)", Color = Color3.fromRGB(46, 204, 113) },
+        { Name = "Low", Label = "🟢 BAIXO (Mobile / Batata - 60 FPS)", Color = Color3.fromRGB(46, 204, 113) },
         { Name = "Medium", Label = "🟡 MÉDIO (Equilibrado / Normal)", Color = Color3.fromRGB(241, 196, 15) },
-        { Name = "High", Label = "🔴 ALTO (Ultra / PC Gamer - Gráficos Top)", Color = Color3.fromRGB(231, 76, 60) }
+        { Name = "High", Label = "🔴 ALTO (Ultra / Água Realista)", Color = Color3.fromRGB(0, 200, 255) }
     }
 
     local function selectQuality(level: GraphicsController.QualityLevel)
         GraphicsController.Apply(level)
-        
-        -- Animação suave para fechar o menu
-        local tween = TweenService:Create(backdrop, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-            BackgroundTransparency = 1
-        })
-        TweenService:Create(mainCard, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-            Position = UDim2.fromScale(0.5, 0.6),
-            BackgroundTransparency = 1
-        }):Play()
-        
+        local tween = TweenService:Create(backdrop, TweenInfo.new(0.4), { BackgroundTransparency = 1 })
+        TweenService:Create(mainCard, TweenInfo.new(0.4), { Position = UDim2.fromScale(0.5, 0.6), BackgroundTransparency = 1 }):Play()
         tween:Play()
         tween.Completed:Connect(function()
             screenGui:Destroy()
@@ -106,14 +94,12 @@ local function createGraphicsSelectorUI()
 
     for _, opt in ipairs(options) do
         local btn = Instance.new("TextButton")
-        btn.Name = opt.Name .. "Btn"
         btn.Size = UDim2.new(1, 0, 0, 48)
         btn.BackgroundColor3 = Color3.fromRGB(35, 38, 52)
         btn.Text = opt.Label
         btn.TextColor3 = Color3.fromRGB(240, 240, 250)
         btn.Font = Enum.Font.GothamMedium
         btn.TextSize = 14
-        btn.AutoButtonColor = false
         btn.Parent = buttonsFrame
 
         local corner = Instance.new("UICorner")
@@ -123,18 +109,7 @@ local function createGraphicsSelectorUI()
         local stroke = Instance.new("UIStroke")
         stroke.Color = opt.Color
         stroke.Thickness = 1.5
-        stroke.Transparency = 0.4
         stroke.Parent = btn
-
-        btn.MouseEnter:Connect(function()
-            TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(48, 52, 72) }):Play()
-            TweenService:Create(stroke, TweenInfo.new(0.2), { Transparency = 0 }):Play()
-        end)
-
-        btn.MouseLeave:Connect(function()
-            TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(35, 38, 52) }):Play()
-            TweenService:Create(stroke, TweenInfo.new(0.2), { Transparency = 0.4 }):Play()
-        end)
 
         btn.MouseButton1Click:Connect(function()
             selectQuality(opt.Name :: GraphicsController.QualityLevel)
@@ -144,5 +119,66 @@ local function createGraphicsSelectorUI()
     screenGui.Parent = playerGui
 end
 
--- Inicia o seletor quando o jogador carregar
 createGraphicsSelectorUI()
+
+-- 2. Popup ao Pescar um Peixe Meme
+fishCaughtEvent.OnClientEvent:Connect(function(fishName: string, rarity: string, price: number, weight: number)
+    local screenGui = playerGui:FindFirstChild("CatchNotification") or Instance.new("ScreenGui")
+    screenGui.Name = "CatchNotification"
+    screenGui.Parent = playerGui
+
+    local popup = Instance.new("Frame")
+    popup.Size = UDim2.fromOffset(360, 110)
+    popup.Position = UDim2.fromScale(0.5, 0.15)
+    popup.AnchorPoint = Vector2.new(0.5, 0.5)
+    popup.BackgroundColor3 = Color3.fromRGB(25, 27, 38)
+    popup.Parent = screenGui
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 14)
+    corner.Parent = popup
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(255, 215, 0)
+    stroke.Thickness = 2
+    stroke.Parent = popup
+
+    local text = Instance.new("TextLabel")
+    text.Size = UDim2.fromScale(1, 1)
+    text.BackgroundTransparency = 1
+    text.Text = string.format("🎣 VOCÊ PISCOU!\n%s\nRaridade: %s | Peso: %dkg | Valor: $%d", fishName, rarity, weight, price)
+    text.TextColor3 = Color3.fromRGB(255, 255, 255)
+    text.Font = Enum.Font.FredokaOne
+    text.TextSize = 16
+    text.Parent = popup
+
+    -- Animação de entrada e saída
+    popup.Position = UDim2.fromScale(0.5, 0.05)
+    TweenService:Create(popup, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Position = UDim2.fromScale(0.5, 0.18)
+    }):Play()
+
+    task.delay(4, function()
+        if popup.Parent then
+            local fadeOut = TweenService:Create(popup, TweenInfo.new(0.3), { BackgroundTransparency = 1 })
+            fadeOut:Play()
+            fadeOut.Completed:Connect(function()
+                popup:Destroy()
+            end)
+        end
+    end)
+end)
+
+-- 3. Ativar Pesca com a Vara (Quando o jogador equipar e clicar)
+local function setupTool(character: Model)
+    character.ChildAdded:Connect(function(child)
+        if child:IsA("Tool") and child.Name:find("Vara") then
+            child.Activated:Connect(function()
+                startFishingEvent:FireServer()
+            end)
+        end
+    end)
+end
+
+if player.Character then setupTool(player.Character) end
+player.CharacterAdded:Connect(setupTool)
