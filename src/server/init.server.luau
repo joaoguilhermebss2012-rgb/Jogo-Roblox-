@@ -6,6 +6,7 @@ local Workspace = game:GetService("Workspace")
 local DataStoreService = game:GetService("DataStoreService")
 
 local FishDatabase = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("FishDatabase"))
+local ShopManager = require(script.Parent:WaitForChild("ShopManager"))
 local fishingDataStore = DataStoreService:GetDataStore("FishingMemesSave_v1")
 
 -- Criação dos RemoteEvents necessários
@@ -20,6 +21,7 @@ startFishingEvent.Parent = sharedFolder
 
 -- 1. Cria a Zona de Água / Lago e a Área de Venda no Mapa
 local function setupFishingEnvironment()
+ShopManager.BuildRodShop()
     local existingZone = Workspace:FindFirstChild("FishingZone")
     if existingZone then existingZone:Destroy() end
 
@@ -111,6 +113,7 @@ local function setupFishingEnvironment()
 end
 
 setupFishingEnvironment()
+ShopManager.BuildRodShop()
 
 -- 2. Leaderstats e Carregamento de Dados
 local function onPlayerAdded(player: Player)
