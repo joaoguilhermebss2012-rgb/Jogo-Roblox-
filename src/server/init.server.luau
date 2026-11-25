@@ -7,6 +7,7 @@ local DataStoreService = game:GetService("DataStoreService")
 
 local FishDatabase = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("FishDatabase"))
 local ShopManager = require(script.Parent:WaitForChild("ShopManager"))
+local DailyRewards = require(script.Parent:WaitForChild("DailyRewards"))
 local fishingDataStore = DataStoreService:GetDataStore("FishingMemesSave_v1")
 
 -- Criação dos RemoteEvents necessários
@@ -22,6 +23,7 @@ startFishingEvent.Parent = sharedFolder
 -- 1. Cria a Zona de Água / Lago e a Área de Venda no Mapa
 local function setupFishingEnvironment()
 ShopManager.BuildRodShop()
+DailyRewards.BuildWheel()
     local existingZone = Workspace:FindFirstChild("FishingZone")
     if existingZone then existingZone:Destroy() end
 
@@ -114,6 +116,7 @@ end
 
 setupFishingEnvironment()
 ShopManager.BuildRodShop()
+DailyRewards.BuildWheel()
 
 -- 2. Leaderstats e Carregamento de Dados
 local function onPlayerAdded(player: Player)
@@ -196,19 +199,23 @@ startFishingEvent.OnServerEvent:Connect(function(player)
     if not leaderstats or not inventory then return end
 
     -- Sorteio de raridade baseado em chance
-    local roll = math.random(1, 100)
+    local roll = math.random(1, 1000)
     local selectedFishKey = "TilapiaBasica"
 
-    if roll <= 45 then
-        selectedFishKey = "TilapiaBasica" -- 45%
-    elseif roll <= 75 then
-        selectedFishKey = "PeixeDourado" -- 30%
-    elseif roll <= 90 then
-        selectedFishKey = "TungTungHamster" -- 15%
-    elseif roll <= 98 then
-        selectedFishKey = "ChillFish" -- 8%
+    if roll <= 400 then
+        selectedFishKey = "TilapiaBasica"    -- 40%
+    elseif roll <= 700 then
+        selectedFishKey = "PeixeDourado"      -- 30%
+    elseif roll <= 850 then
+        selectedFishKey = "TungTungHamster"  -- 15%
+    elseif roll <= 930 then
+        selectedFishKey = "SmurfCat"         -- 8%
+    elseif roll <= 980 then
+        selectedFishKey = "ChillFish"        -- 5%
+    elseif roll <= 995 then
+        selectedFishKey = "MewingCatfish"    -- 1.5%
     else
-        selectedFishKey = "SkibidiShark" -- 2% Super Raro!
+        selectedFishKey = "SkibidiShark"     -- 0.5% Super Raro Lendário!
     end
 
     local fishInfo = FishDatabase[selectedFishKey]
