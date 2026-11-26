@@ -8,6 +8,8 @@ local DataStoreService = game:GetService("DataStoreService")
 local FishDatabase = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("FishDatabase"))
 local ShopManager = require(script.Parent:WaitForChild("ShopManager"))
 local DailyRewards = require(script.Parent:WaitForChild("DailyRewards"))
+local OceanManager = require(script.Parent:WaitForChild("OceanManager"))
+local PetManager = require(script.Parent:WaitForChild("PetManager"))
 local fishingDataStore = DataStoreService:GetDataStore("FishingMemesSave_v1")
 
 -- Criação dos RemoteEvents necessários
@@ -24,6 +26,8 @@ startFishingEvent.Parent = sharedFolder
 local function setupFishingEnvironment()
 ShopManager.BuildRodShop()
 DailyRewards.BuildWheel()
+OceanManager.BuildOceanExpansion()
+PetManager.BuildPetShop()
     local existingZone = Workspace:FindFirstChild("FishingZone")
     if existingZone then existingZone:Destroy() end
 
@@ -117,6 +121,8 @@ end
 setupFishingEnvironment()
 ShopManager.BuildRodShop()
 DailyRewards.BuildWheel()
+OceanManager.BuildOceanExpansion()
+PetManager.BuildPetShop()
 
 -- 2. Leaderstats e Carregamento de Dados
 local function onPlayerAdded(player: Player)
