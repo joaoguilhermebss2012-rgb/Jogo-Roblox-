@@ -1,11 +1,12 @@
 --!strict
--- SISTEMA DEFINITIVO: JOGO DE PESCA DOS MEMES + AQUÁRIOS NAS PORTAS
+-- SISTEMA MASTER VIRAL: PESCA + TYCOON DE AQUÁRIOS + RNG DE MEMES
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Lighting = game:GetService("Lighting")
 
--- 1. CRIAÇÃO DE EVENTOS
+-- 1. CRIAÇÃO DE EVENTOS REMOTOS
 local fishCaughtEvent = ReplicatedStorage:FindFirstChild("FishCaughtEvent") or Instance.new("RemoteEvent")
 fishCaughtEvent.Name = "FishCaughtEvent"
 fishCaughtEvent.Parent = ReplicatedStorage
@@ -14,111 +15,22 @@ local startFishingEvent = ReplicatedStorage:FindFirstChild("StartFishingEvent") 
 startFishingEvent.Name = "StartFishingEvent"
 startFishingEvent.Parent = ReplicatedStorage
 
--- 2. BANCO DE PEIXES MEMES (COM MODELOS/CORES)
+local mythicalAlertEvent = ReplicatedStorage:FindFirstChild("MythicalAlertEvent") or Instance.new("RemoteEvent")
+mythicalAlertEvent.Name = "MythicalAlertEvent"
+mythicalAlertEvent.Parent = ReplicatedStorage
+
+-- 2. BANCO DE DADOS DE PEIXES & CHANCES
 local FishList = {
-    { Name = "🐟 Tilápia Normal", Rarity = "Comum", Price = 25, Weight = 2, Color = Color3.fromRGB(160, 160, 160) },
-    { Name = "🐠 Dourado Reluzente", Rarity = "Incomum", Price = 80, Weight = 5, Color = Color3.fromRGB(255, 215, 0) },
-    { Name = "🐹 Hamster Tung Tung", Rarity = "Raro (Meme)", Price = 350, Weight = 9, Color = Color3.fromRGB(255, 180, 130) },
-    { Name = "🍄 Shailushai (Smurf Cat)", Rarity = "Épico (Meme)", Price = 800, Weight = 18, Color = Color3.fromRGB(0, 150, 255) },
-    { Name = "🦫 Peixe Chill Guy", Rarity = "Lendário (Meme)", Price = 2000, Weight = 35, Color = Color3.fromRGB(180, 110, 60) },
-    { Name = "🗿 Peixe Mewing Mandíbula", Rarity = "Lendário (Brainrot)", Price = 4000, Weight = 60, Color = Color3.fromRGB(220, 220, 240) },
-    { Name = "🦈 Skibidi Tubarão Titã", Rarity = "Mítico (Deus)", Price = 12000, Weight = 200, Color = Color3.fromRGB(255, 40, 40) }
+    { Name = "🐟 Tilápia Normal", Rarity = "Comum", Price = 25, Income = 2, Color = Color3.fromRGB(160, 160, 160), Chance = 450 },
+    { Name = "🐠 Dourado Reluzente", Rarity = "Incomum", Price = 90, Income = 6, Color = Color3.fromRGB(255, 215, 0), Chance = 300 },
+    { Name = "🐹 Hamster Tung Tung", Rarity = "Raro", Price = 380, Income = 25, Color = Color3.fromRGB(255, 180, 130), Chance = 140 },
+    { Name = "🍄 Shailushai (Smurf Cat)", Rarity = "Épico", Price = 950, Income = 70, Color = Color3.fromRGB(0, 150, 255), Chance = 70 },
+    { Name = "🦫 Peixe Chill Guy", Rarity = "Lendário", Price = 2500, Income = 180, Color = Color3.fromRGB(180, 110, 60), Chance = 30 },
+    { Name = "🗿 Peixe Mewing Mandíbula", Rarity = "Lendário+", Price = 5000, Income = 400, Color = Color3.fromRGB(220, 220, 240), Chance = 9 },
+    { Name = "🦈 Skibidi Tubarão Titã", Rarity = "MÍTICO", Price = 15000, Income = 1200, Color = Color3.fromRGB(255, 40, 40), Chance = 1 }
 }
 
--- 3. CRIAR OS AQUÁRIOS NAS BAIAS/PORTAS (ONDE ANTES ERAM PORTAS)
-local function buildAquariums(folder: Folder)
-    -- Posições exatas alinhadas com as 4 baias/portas do mapa do jogador
-    local aquariumPositions = {
-        { Pos = Vector3.new(-38, 5, -5), Name = "Aquário Comum (Tilápia & Dourado)", FishColor = Color3.fromRGB(255, 215, 0) },
-        { Pos = Vector3.new(-13, 5, -5), Name = "Aquário Viral (Tung Tung Hamster)", FishColor = Color3.fromRGB(255, 180, 130) },
-        { Pos = Vector3.new(13, 5, -5),  Name = "Aquário Shailushai & Chill Guy", FishColor = Color3.fromRGB(0, 180, 255) },
-        { Pos = Vector3.new(38, 5, -5),  Name = "Aquário Mítico (Mewing & Skibidi)", FishColor = Color3.fromRGB(255, 50, 50) }
-    }
-
-    for i, data in ipairs(aquariumPositions) do
-        local tankModel = Instance.new("Model")
-        tankModel.Name = "Aquarium_" .. i
-        tankModel.Parent = folder
-
-        -- Água Translúcida com Efeito
-        local water = Instance.new("Part")
-        water.Name = "TankWater"
-        water.Size = Vector3.new(18, 12, 14)
-        water.Position = data.Pos
-        water.Anchored = true
-        water.CanCollide = false
-        water.Material = Enum.Material.Glass
-        water.Transparency = 0.4
-        water.Color = Color3.fromRGB(0, 160, 255)
-        water.Parent = tankModel
-
-        -- Vidro de proteção frontal
-        local glass = Instance.new("Part")
-        glass.Name = "FrontGlass"
-        glass.Size = Vector3.new(18.2, 12.2, 1)
-        glass.Position = data.Pos + Vector3.new(0, 0, 7)
-        glass.Anchored = true
-        glass.Material = Enum.Material.Glass
-        glass.Transparency = 0.7
-        glass.Color = Color3.fromRGB(220, 240, 255)
-        glass.Parent = tankModel
-
-        -- Moldura Superior Neon
-        local rim = Instance.new("Part")
-        rim.Name = "NeonRim"
-        rim.Size = Vector3.new(19, 1, 15)
-        rim.Position = data.Pos + Vector3.new(0, 6.2, 0)
-        rim.Anchored = true
-        rim.Material = Enum.Material.Neon
-        rim.Color = data.FishColor
-        rim.Parent = tankModel
-
-        -- Letreiro 3D do Aquário
-        local billboard = Instance.new("BillboardGui")
-        billboard.Size = UDim2.fromOffset(220, 45)
-        billboard.StudsOffset = Vector3.new(0, 8, 0)
-        billboard.AlwaysOnTop = true
-        billboard.Adornee = water
-        billboard.Parent = tankModel
-
-        local label = Instance.new("TextLabel")
-        label.Size = UDim2.fromScale(1, 1)
-        label.BackgroundTransparency = 1
-        label.Text = "🫧 " .. data.Name .. " 🫧\n[+R$ 5/seg de Renda Passiva]"
-        label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        label.Font = Enum.Font.FredokaOne
-        label.TextSize = 13
-        label.TextStrokeTransparency = 0
-        label.Parent = billboard
-
-        -- Peixinho 3D Animado Nadando em Círculos dentro da água
-        local fish = Instance.new("Part")
-        fish.Name = "SwimmingFish"
-        fish.Size = Vector3.new(1.2, 0.8, 2.5)
-        fish.Shape = Enum.PartType.Block
-        fish.Color = data.FishColor
-        fish.Material = Enum.Material.Neon
-        fish.Anchored = true
-        fish.CanCollide = false
-        fish.Parent = tankModel
-
-        -- Loop de Natação Suave
-        task.spawn(function()
-            local angle = math.random(0, 360)
-            while fish.Parent do
-                angle += 2.5
-                local rad = math.rad(angle)
-                local offsetX = math.cos(rad) * 6
-                local offsetZ = math.sin(rad) * 4
-                local targetCFrame = CFrame.new(data.Pos + Vector3.new(offsetX, math.sin(angle * 0.05) * 1.5, offsetZ)) * CFrame.Angles(0, -rad + math.pi/2, 0)
-                fish.CFrame = targetCFrame
-                task.wait(0.03)
-            end
-        end)
-    end
-end
-
--- 4. CONSTRUÇÃO COMPLETA DO MAPA MELHORADO
+-- 3. CONSTRUÇÃO DO MAPA (AQUÁRIOS NAS 4 PORTAS)
 local function buildMap()
     local oldFolder = Workspace:FindFirstChild("FishingExpansion")
     if oldFolder then oldFolder:Destroy() end
@@ -127,10 +39,149 @@ local function buildMap()
     folder.Name = "FishingExpansion"
     folder.Parent = Workspace
 
-    -- Constrói os Aquários nas Baias
-    buildAquariums(folder)
+    -- As 4 Baias/Portas virando Aquários de Tycoon Interativos
+    local bays = {
+        { Pos = Vector3.new(-38, 5, -5), Name = "Aquário 1" },
+        { Pos = Vector3.new(-13, 5, -5), Name = "Aquário 2" },
+        { Pos = Vector3.new(13, 5, -5),  Name = "Aquário 3" },
+        { Pos = Vector3.new(38, 5, -5),  Name = "Aquário 4" }
+    }
 
-    -- Lago de Pesca Principal (Com Iluminação)
+    for i, bay in ipairs(bays) do
+        local tank = Instance.new("Model")
+        tank.Name = "BayAquarium_" .. i
+        tank.Parent = folder
+
+        -- Tanque de Água
+        local water = Instance.new("Part")
+        water.Name = "Water"
+        water.Size = Vector3.new(18, 12, 14)
+        water.Position = bay.Pos
+        water.Anchored = true
+        water.CanCollide = false
+        water.Material = Enum.Material.Glass
+        water.Transparency = 0.35
+        water.Color = Color3.fromRGB(0, 150, 255)
+        water.Parent = tank
+
+        -- Vidro de proteção
+        local glass = Instance.new("Part")
+        glass.Name = "Glass"
+        glass.Size = Vector3.new(18.2, 12.2, 1)
+        glass.Position = bay.Pos + Vector3.new(0, 0, 7)
+        glass.Anchored = true
+        glass.Material = Enum.Material.Glass
+        glass.Transparency = 0.75
+        glass.Color = Color3.fromRGB(200, 240, 255)
+        glass.Parent = tank
+
+        -- Moldura Superior
+        local rim = Instance.new("Part")
+        rim.Name = "Rim"
+        rim.Size = Vector3.new(19, 1, 15)
+        rim.Position = bay.Pos + Vector3.new(0, 6.2, 0)
+        rim.Anchored = true
+        rim.Material = Enum.Material.Neon
+        rim.Color = Color3.fromRGB(0, 255, 255)
+        rim.Parent = tank
+
+        -- Botão no chão para DEPOSITAR PEIXES no aquário
+        local depositPad = Instance.new("Part")
+        depositPad.Name = "DepositPad"
+        depositPad.Size = Vector3.new(8, 0.8, 8)
+        depositPad.Position = bay.Pos + Vector3.new(0, -4.5, 9)
+        depositPad.Anchored = true
+        depositPad.Material = Enum.Material.Neon
+        depositPad.Color = Color3.fromRGB(0, 255, 150)
+        depositPad.Parent = tank
+
+        local padGui = Instance.new("BillboardGui")
+        padGui.Size = UDim2.fromOffset(200, 50)
+        padGui.StudsOffset = Vector3.new(0, 4, 0)
+        padGui.AlwaysOnTop = true
+        padGui.Adornee = depositPad
+        padGui.Parent = tank
+
+        local padTxt = Instance.new("TextLabel", padGui)
+        padTxt.Size = UDim2.fromScale(1, 1)
+        padTxt.BackgroundTransparency = 1
+        padTxt.Text = "📥 DEPOSITAR PEIXE\n[Pise para Guardar no Aquário]"
+        padTxt.TextColor3 = Color3.fromRGB(255, 255, 255)
+        padTxt.Font = Enum.Font.FredokaOne
+        padTxt.TextSize = 12
+        padTxt.TextStrokeTransparency = 0
+
+        -- Placa Holográfica do Aquário
+        local billboard = Instance.new("BillboardGui")
+        billboard.Size = UDim2.fromOffset(260, 60)
+        billboard.StudsOffset = Vector3.new(0, 8.5, 0)
+        billboard.AlwaysOnTop = true
+        billboard.Adornee = water
+        billboard.Parent = tank
+
+        local infoTxt = Instance.new("TextLabel", billboard)
+        infoTxt.Name = "InfoLabel"
+        infoTxt.Size = UDim2.fromScale(1, 1)
+        infoTxt.BackgroundTransparency = 1
+        infoTxt.Text = "🫧 " .. bay.Name .. " 🫧\n[Vazio - Deposite Peixes]"
+        infoTxt.TextColor3 = Color3.fromRGB(255, 255, 255)
+        infoTxt.Font = Enum.Font.FredokaOne
+        infoTxt.TextSize = 14
+        infoTxt.TextStrokeTransparency = 0
+
+        -- Pasta para guardar os peixes colocados neste aquário
+        local tankFishFolder = Instance.new("Folder")
+        tankFishFolder.Name = "FishFolder"
+        tankFishFolder.Parent = tank
+
+        -- Lógica de Depositar ao pisar
+        local debounce = false
+        depositPad.Touched:Connect(function(hit)
+            local player = Players:GetPlayerFromCharacter(hit.Parent)
+            if player and not debounce then
+                debounce = true
+                local inv = player:FindFirstChild("FishInventory")
+                if inv and #inv:GetChildren() > 0 then
+                    -- Pega o peixe mais valioso da mochila e coloca no aquário
+                    local bestFish = inv:GetChildren()[#inv:GetChildren()] :: IntValue
+                    local fishColorVal = bestFish:FindFirstChild("Color") :: Color3Value?
+                    local fishColor = fishColorVal and fishColorVal.Value or Color3.fromRGB(255, 215, 0)
+                    local incomeVal = bestFish:FindFirstChild("Income") :: IntValue?
+                    local income = incomeVal and incomeVal.Value or 5
+
+                    bestFish.Parent = tankFishFolder
+
+                    -- Cria o peixe 3D nadando dentro desse aquário
+                    local swimmingFish = Instance.new("Part")
+                    swimmingFish.Name = "SwimmingFish"
+                    swimmingFish.Size = Vector3.new(1.4, 0.9, 2.8)
+                    swimmingFish.Color = fishColor
+                    swimmingFish.Material = Enum.Material.Neon
+                    swimmingFish.Anchored = true
+                    swimmingFish.CanCollide = false
+                    swimmingFish.Parent = tank
+
+                    -- Loop de natação individual
+                    task.spawn(function()
+                        local angle = math.random(0, 360)
+                        while swimmingFish.Parent do
+                            angle += 3
+                            local rad = math.rad(angle)
+                            swimmingFish.CFrame = CFrame.new(bay.Pos + Vector3.new(math.cos(rad) * 6, math.sin(angle * 0.05) * 2, math.sin(rad) * 4)) * CFrame.Angles(0, -rad + math.pi/2, 0)
+                            task.wait(0.03)
+                        end
+                    end)
+
+                    -- Atualiza letreiro do aquário
+                    infoTxt.Text = string.format("🫧 %s 🫧\n[%d Peixe(s) | +R$ %d/s Renda]", bay.Name, #tankFishFolder:GetChildren(), #tankFishFolder:GetChildren() * 15)
+                end
+                task.wait(1.5)
+                debounce = false
+            end
+        end)
+    end
+
+    -- Lago de Pesca Principal
     local lake = Instance.new("Part")
     lake.Name = "LakeWater"
     lake.Size = Vector3.new(110, 6, 100)
@@ -144,8 +195,8 @@ local function buildMap()
 
     local lakeLight = Instance.new("PointLight")
     lakeLight.Color = Color3.fromRGB(0, 220, 255)
-    lakeLight.Range = 60
-    lakeLight.Brightness = 2
+    lakeLight.Range = 65
+    lakeLight.Brightness = 2.5
     lakeLight.Parent = lake
 
     local lakeGui = Instance.new("BillboardGui")
@@ -163,7 +214,7 @@ local function buildMap()
     lakeTxt.TextSize = 22
     lakeTxt.TextStrokeTransparency = 0
 
-    -- Sell Pad (Venda de Peixes)
+    -- Sell Pad (Vender Peixes)
     local sellPad = Instance.new("Part")
     sellPad.Name = "SellPad"
     sellPad.Size = Vector3.new(14, 1.2, 14)
@@ -196,7 +247,7 @@ local function buildMap()
             if inv and money and #inv:GetChildren() > 0 then
                 local total = 0
                 for _, f in ipairs(inv:GetChildren()) do
-                    total += f.Value
+                    total += (f:IsA("IntValue") and f.Value or 20)
                     f:Destroy()
                 end
                 money.Value += total
@@ -204,7 +255,7 @@ local function buildMap()
         end
     end)
 
-    -- Roleta Diária
+    -- Roleta da Sorte
     local wheelPad = Instance.new("Part")
     wheelPad.Size = Vector3.new(14, 1.2, 14)
     wheelPad.Position = Vector3.new(45, 1, 15)
@@ -222,7 +273,7 @@ local function buildMap()
     local wheelTxt = Instance.new("TextLabel", wheelGui)
     wheelTxt.Size = UDim2.fromScale(1, 1)
     wheelTxt.BackgroundTransparency = 1
-    wheelTxt.Text = "🎁 ROLETA DA SORTE (BÔNUS) 🎁"
+    wheelTxt.Text = "🎁 ROLETA DA SORTE 🎁"
     wheelTxt.TextColor3 = Color3.fromRGB(0, 255, 230)
     wheelTxt.Font = Enum.Font.FredokaOne
     wheelTxt.TextSize = 15
@@ -234,9 +285,7 @@ local function buildMap()
         if player and (os.time() - (cooldowns[player.UserId] or 0) >= 30) then
             cooldowns[player.UserId] = os.time()
             local money = player.leaderstats:FindFirstChild("Dinheiro")
-            if money then
-                money.Value += math.random(150, 600)
-            end
+            if money then money.Value += math.random(150, 600) end
         end
     end)
 
@@ -286,21 +335,38 @@ end
 
 buildMap()
 
--- 5. RENDA PASSIVA DOS AQUÁRIOS (Gera dinheiro automaticamente a cada segundo)
+-- 4. RENDA PASSIVA DINÂMICA (Gera dinheiro baseado nos peixes dentro dos aquários)
 task.spawn(function()
     while true do
         task.wait(1)
+        local expansion = Workspace:FindFirstChild("FishingExpansion")
+        local totalIncomePerSec = 5 -- Renda base
+
+        if expansion then
+            for _, child in ipairs(expansion:GetChildren()) do
+                if child.Name:find("BayAquarium") then
+                    local fishFolder = child:FindFirstChild("FishFolder")
+                    if fishFolder then
+                        for _, fish in ipairs(fishFolder:GetChildren()) do
+                            local incVal = fish:FindFirstChild("Income") :: IntValue?
+                            totalIncomePerSec += (incVal and incVal.Value or 5)
+                        end
+                    end
+                end
+            end
+        end
+
         for _, player in ipairs(Players:GetPlayers()) do
             local leaderstats = player:FindFirstChild("leaderstats")
             local money = leaderstats and leaderstats:FindFirstChild("Dinheiro")
             if money and money:IsA("IntValue") then
-                money.Value += 5 -- Cada aquário ativo gera renda passiva para os jogadores no mapa
+                money.Value += totalIncomePerSec
             end
         end
     end
 end)
 
--- 6. DADOS DO JOGADOR & VARA INICIAL
+-- 5. LEADERSTATS & VARA DO JOGADOR
 Players.PlayerAdded:Connect(function(player)
     local leaderstats = Instance.new("Folder")
     leaderstats.Name = "leaderstats"
@@ -308,7 +374,7 @@ Players.PlayerAdded:Connect(function(player)
 
     local money = Instance.new("IntValue")
     money.Name = "Dinheiro"
-    money.Value = 100 -- Já começa com 100 moedas
+    money.Value = 150
     money.Parent = leaderstats
 
     local totalCaught = Instance.new("IntValue")
@@ -340,24 +406,53 @@ Players.PlayerAdded:Connect(function(player)
     giveRod()
 end)
 
--- 7. LÓGICA DE PESCAR
+-- 6. LÓGICA DE PESCAR COM RNG & ANÚNCIO DE PEIXES MÍTICOS
 startFishingEvent.OnServerEvent:Connect(function(player)
     local inv = player:FindFirstChild("FishInventory")
     local leaderstats = player:FindFirstChild("leaderstats")
     if not inv or not leaderstats then return end
 
-    local roll = math.random(1, #FishList)
-    local fish = FishList[roll]
+    -- Sorteio ponderado por chances
+    local totalWeight = 0
+    for _, f in ipairs(FishList) do totalWeight += f.Chance end
+    local roll = math.random(1, totalWeight)
 
-    local val = Instance.new("IntValue")
-    val.Name = fish.Name
-    val.Value = fish.Price
-    val.Parent = inv
+    local current = 0
+    local selectedFish = FishList[1]
+    for _, f in ipairs(FishList) do
+        current += f.Chance
+        if roll <= current then
+            selectedFish = f
+            break
+        end
+    end
+
+    -- Cria o item no inventário com cor e renda
+    local fishItem = Instance.new("IntValue")
+    fishItem.Name = selectedFish.Name
+    fishItem.Value = selectedFish.Price
+
+    local colorVal = Instance.new("Color3Value")
+    colorVal.Name = "Color"
+    colorVal.Value = selectedFish.Color
+    colorVal.Parent = fishItem
+
+    local incVal = Instance.new("IntValue")
+    incVal.Name = "Income"
+    incVal.Value = selectedFish.Income
+    incVal.Parent = fishItem
+
+    fishItem.Parent = inv
 
     local caughtVal = leaderstats:FindFirstChild("Peixes")
     if caughtVal then caughtVal.Value += 1 end
 
-    fishCaughtEvent:FireClient(player, fish.Name, fish.Rarity, fish.Price, fish.Weight)
+    -- Se for Lendário ou Mítico, dispara Alerta Global para todo o servidor!
+    if selectedFish.Rarity == "Lendário" or selectedFish.Rarity == "Lendário+" or selectedFish.Rarity == "MÍTICO" then
+        mythicalAlertEvent:FireAllClients(player.Name, selectedFish.Name, selectedFish.Rarity)
+    end
+
+    fishCaughtEvent:FireClient(player, selectedFish.Name, selectedFish.Rarity, selectedFish.Price, math.random(2, 50))
 end)
 
-print("🌊 Sistema de Pesca com Aquários das Portas Ativado!")
+print("🚀 Sistema Master Brainrot Fishing Tycoon Operacional!")
